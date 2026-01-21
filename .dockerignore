@@ -1,0 +1,17 @@
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.vscode
+.idea
+outputs
+data
+logs
+.env
+.ipynb_checkpoints
+Dockerfile
+.dockerignore
+README_DOCKER.md

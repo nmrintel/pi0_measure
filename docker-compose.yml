@@ -1,0 +1,17 @@
+services:
+  lerobot:
+    build: .
+    image: lerobot
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    command: /bin/bash
