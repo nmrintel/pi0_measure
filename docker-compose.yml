@@ -12,6 +12,10 @@ services:
     volumes:
       - .:/workspace
     working_dir: /workspace
+    ports:
+      - "5678:5678"
+    environment:
+      - DEBUG=0
     stdin_open: true # docker run -i
     tty: true # docker run -t
     command: /bin/bash

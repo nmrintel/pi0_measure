@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     curl \
     ca-certificates \
+    openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set python3.10 as the default python
@@ -48,8 +49,14 @@ WORKDIR /app
 # Clone lerobot repository
 RUN git clone https://github.com/huggingface/lerobot.git .
 
-# Install lerobot with all extras, including pi0
+# Install lerobot with all extras, including pi0, and debugpy
 RUN pip install --no-cache-dir -e ".[all]"
+
+RUN pip install --no-cache-dir -e ".[pi]"
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 
 # Set the default command
 CMD ["/bin/bash"]
