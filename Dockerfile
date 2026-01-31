@@ -32,7 +32,7 @@ RUN ln -s /usr/bin/python3.10 /usr/bin/python
 # Install ffmpeg 7.x
 # Since Ubuntu 22.04 might not have 7.x in default repos, we can use a PPA or build from source.
 # For simplicity and reliability in a Dockerfile, we'll use a known static build or a reliable PPA.
-# Here we use the conda-forge approach mentioned in the docs if possible, 
+# Here we use the conda-forge approach mentioned in the docs if possible,
 # but in a pure Dockerfile (non-conda), we might want to use a static build.
 RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
     && tar -xvf ffmpeg-release-amd64-static.tar.xz \
