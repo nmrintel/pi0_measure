@@ -14,7 +14,10 @@ else
 fi
 
 # Install lerobot in editable mode to ensure it's linked
-# Using 'pip install -e' updates the egg-link, which is fast if dependencies are already met
+# Uninstall existing lerobot first to ensure we switch to the workspace version
+echo "Uninstalling existing lerobot..."
+pip uninstall -y lerobot || true
+
 echo "Installing lerobot in editable mode..."
 pip install --no-cache-dir -e "$LEROBOT_DIR[all,pi]"
 

@@ -50,8 +50,7 @@ RUN git clone https://github.com/huggingface/lerobot.git
 
 # Install lerobot with all extras, including pi0, and debugpy in the cached location
 WORKDIR /opt/lerobot
-RUN pip install --no-cache-dir -e ".[all]"
-RUN pip install --no-cache-dir -e ".[pi]"
+RUN pip install --no-cache-dir -e ".[all,pi]"
 
 # Switch back to workspace
 WORKDIR /app
