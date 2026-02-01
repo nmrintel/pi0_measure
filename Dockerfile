@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
     openssh-client \
+    nvtop \
     && rm -rf /var/lib/apt/lists/*
 
 # Set python3.10 as the default python
@@ -43,20 +44,25 @@ RUN wget https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.t
 # Upgrade pip
 RUN python3 -m pip install --no-cache-dir --upgrade pip
 
-# Create workspace
-WORKDIR /app
+# Clone lerobot repository into /opt for caching
+WORKDIR /opt
+RUN git clone https://github.com/huggingface/lerobot.git
 
-# Clone lerobot repository
-RUN git clone https://github.com/huggingface/lerobot.git .
-
-# Install lerobot with all extras, including pi0, and debugpy
+# Install lerobot with all extras, including pi0, and debugpy in the cached location
+WORKDIR /opt/lerobot
 RUN pip install --no-cache-dir -e ".[all]"
-
 RUN pip install --no-cache-dir -e ".[pi]"
+
+# Switch back to workspace
+WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy entrypoint script
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Set the default command
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/bin/bash"]
