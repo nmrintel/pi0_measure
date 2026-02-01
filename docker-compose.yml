@@ -11,6 +11,7 @@ services:
               capabilities: [ gpu ]
     volumes:
       - .:/workspace
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
     working_dir: /workspace
     ports:
       - "5678:5678"

@@ -50,7 +50,8 @@ RUN git clone https://github.com/huggingface/lerobot.git
 
 # Install lerobot with all extras, including pi0, and debugpy in the cached location
 WORKDIR /opt/lerobot
-RUN pip install --no-cache-dir -e ".[all,pi]"
+RUN pip install --no-cache-dir -e ".[all]"
+RUN pip install --no-cache-dir -e ".[pi]"
 
 # Switch back to workspace
 WORKDIR /app
@@ -58,7 +59,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy entrypoint script
+# Copy entrypoint script (TODO: remove this)
 COPY entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
