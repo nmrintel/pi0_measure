@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -6,13 +5,13 @@ import torch
 
 from lerobot.policies.pi0.modeling_pi0 import PI0Policy
 
-if os.environ.get("DEBUG") == "1":
-    import debugpy
+# if os.environ.get("DEBUG") == "1":
+#     import debugpy
 
-    print("Waiting for debugger attach on port 5678...")
-    debugpy.listen(("0.0.0.0", 5678))
-    debugpy.wait_for_client()
-    print("Debugger attached!")
+#     print("Waiting for debugger attach on port 5678...")
+#     debugpy.listen(("0.0.0.0", 5678))
+#     debugpy.wait_for_client()
+#     print("Debugger attached!")
 
 
 def get_dummy_observation(
@@ -63,6 +62,10 @@ def get_dummy_observation(
 
 
 def benchmark() -> None:
+    import lerobot
+
+    print(f"DEBUG: lerobot path: {lerobot.__file__}")
+
     # Use the expected model ID.
     # NOTE: You might need 'lerobot/pi0-base'
     # or similar if 'lerobot/pi0' is not the exact ID.
@@ -132,6 +135,10 @@ def benchmark() -> None:
     policy.to(device)
     policy.eval()
     print(f"Policy loaded in {time.time() - start_load:.2f}s")
+    print(
+        f"Config: chunk_size={policy.config.chunk_size}, "
+        f"n_action_steps={policy.config.n_action_steps}"
+    )
 
     # Prepare dummy input (on CPU to measure transfer time)
     print("Preparing dummy inputs (on CPU)...")
@@ -154,6 +161,12 @@ def benchmark() -> None:
         return
 
     print("Starting benchmark (100 iterations)...")
+
+    # Clear previous stats
+    from lerobot.policies.pi0.modeling_pi0 import CudaTimer
+
+    CudaTimer.clear_stats()
+
     latencies = []
     with torch.inference_mode():
         for i in range(100):
@@ -162,18 +175,42 @@ def benchmark() -> None:
             if device == "cuda":
                 torch.cuda.synchronize()
             end = time.perf_counter()
-            latencies.append((end - start) * 1000)  # ms
+            latencies.append((end - start) * 1000)  # ms (Total CPU + GPU)
 
     avg_lat = np.mean(latencies)
-    max_lat = np.max(latencies)
-    min_lat = np.min(latencies)
     fps = 1000.0 / avg_lat
 
-    print("\n--- Benchmark Results ---")
-    print(f"Average Latency: {avg_lat:.2f} ms")
-    print(f"Min Latency:     {min_lat:.2f} ms")
-    print(f"Max Latency:     {max_lat:.2f} ms")
-    print(f"Throughput:      {fps:.2f} FPS")
+    # Calculate detailed stats
+    stats = CudaTimer.STATS
+
+    print("\n--- Benchmark Results (Total Latency: CPU dispatch + GPU execution) ---")
+    print(f"Average Latency (per step): {avg_lat:.2f} ms")
+    print(f"Throughput:                 {fps:.2f} FPS")
+
+    # Calculate per-chunk (inference) stats
+    # These stats are recorded once per inference (every ~50 steps)
+    # So np.mean() gives the average time for ONE full inference pass.
+    chunk_transfer = np.mean(stats.get("preprocess_images", [0]))
+    chunk_embed = np.mean(stats.get("embed_prefix", [0]))
+    chunk_prefix = np.mean(stats.get("prefix_forward", [0]))
+    chunk_inference_total = np.mean(stats.get("predict_action_chunk", [0]))
+
+    # Sum all denoise steps per chunk
+    # We need to average the SUM of denoise steps per inference.
+    # Since stats["denoise_step_X"] has 2 entries (for 2 inferences),
+    # we can sum mean of each step.
+    chunk_denoise = 0.0
+    for key in stats:
+        if key.startswith("denoise_step_"):
+            chunk_denoise += np.mean(stats[key])
+
+    print("\n--- Latency per Inference Chunk (approx. 50 steps) ---")
+    print(f"Total Inference Latency:      {chunk_inference_total:.2f} ms")
+    print(f"  - Data Transfer & Prep:     {chunk_transfer:.2f} ms")
+    print(f"  - PaliGemma Image (Vision): {chunk_embed:.2f} ms")
+    print(f"  - PaliGemma Prefix (LLM):   {chunk_prefix:.2f} ms")
+    print(f"  - Denoise Loop:             {chunk_denoise:.2f} ms")
+    print("-------------------------------------------------------")
 
 
 if __name__ == "__main__":
