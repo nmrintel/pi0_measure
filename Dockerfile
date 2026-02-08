@@ -1,17 +1,15 @@
-# Use NVIDIA CUDA base image for GPU support
-FROM nvidia/cuda:12.1.1-devel-ubuntu22.04
+# Use Official PyTorch 2.7.1 image with CUDA 12.6 and cuDNN 9
+FROM pytorch/pytorch:2.7.1-cuda12.8-cudnn9-devel
 
 # Prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies
+# Note: The base image already has python, but we need other build tools and libraries.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     cmake \
     build-essential \
-    python3.10 \
-    python3-pip \
-    python3-dev \
     pkg-config \
     libavformat-dev \
     libavcodec-dev \
@@ -27,8 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nvtop \
     && rm -rf /var/lib/apt/lists/*
 
-# Set python3.10 as the default python
-RUN ln -s /usr/bin/python3.10 /usr/bin/python
+# The base image has python 3.11 installed as default, so we don't need to install or symlink python3.10.
+
 
 # Install ffmpeg 7.x
 # Since Ubuntu 22.04 might not have 7.x in default repos, we can use a PPA or build from source.
@@ -50,14 +48,9 @@ RUN git clone https://github.com/huggingface/lerobot.git
 
 # Install lerobot with all extras, including pi0, and debugpy in the cached location
 WORKDIR /opt/lerobot
-RUN pip install --no-cache-dir -e ".[all]"
+# Install only the necessary dependencies for PI0 benchmark
+# (Avoids conflicts in [all] that break build)
 RUN pip install --no-cache-dir -e ".[pi]"
-
-# Switch back to workspace
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy entrypoint script (TODO: remove this)
 COPY entrypoint.sh /usr/local/bin/

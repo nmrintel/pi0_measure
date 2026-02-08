@@ -19,7 +19,6 @@ echo "Uninstalling existing lerobot..."
 pip uninstall -y lerobot || true
 
 echo "Installing lerobot in editable mode (without re-installing dependencies)..."
-pip install --no-cache-dir -e "$LEROBOT_DIR[all]" --no-deps
 pip install --no-cache-dir -e "$LEROBOT_DIR[pi]" --no-deps
 
 # Execute the passed command
